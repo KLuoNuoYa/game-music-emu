@@ -8,6 +8,10 @@ endif()
 
 project(libgme)
 
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 include(CMakePushCheckState)
@@ -65,6 +69,7 @@ endif()
 option(GME_BUILD_SHARED "Build shared library" ${GME_BUILD_SHARED_DEFAULT})
 option(GME_BUILD_STATIC "Build static library" ON)
 option(GME_BUILD_FRAMEWORK "Build framework instead of dylib on macOS" ${BUILD_FRAMEWORK})
+option(GME_BUILD_INNO_DLL "Build Windows stdcall wrapper DLL for Inno Setup" ${WIN32})
 
 option(GME_ENABLE_UBSAN "Enable Undefined Behavior Sanitizer error-checking" ${ENABLE_UBSAN})
 option(GME_ENABLE_ASAN "Enable Adress Sanitizer error-checking" OFF)
@@ -125,6 +130,16 @@ endif()
 
 # Shared library defined here
 add_subdirectory(gme)
+
+if(GME_BUILD_INNO_DLL)
+    if(NOT WIN32)
+        message(FATAL_ERROR "GME_BUILD_INNO_DLL is only supported on Windows.")
+    endif()
+    if(NOT GME_BUILD_STATIC)
+        message(FATAL_ERROR "GME_BUILD_INNO_DLL requires GME_BUILD_STATIC=ON so the wrapper can be shipped as a single DLL.")
+    endif()
+    add_subdirectory(inno)
+endif()
 
 # Add example project build rules
 if (GME_BUILD_EXAMPLES)
